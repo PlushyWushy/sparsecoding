@@ -6,7 +6,7 @@ import torch
 import matplotlib.pyplot as plt
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))  # so LCA.py in the folder above can be imported
-import LCA
+import classical.LCA as LCA
 
 S = 500
 cycles = 400

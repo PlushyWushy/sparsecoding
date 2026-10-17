@@ -11,8 +11,8 @@ import argparse
 import os
 import numpy as np
 from PIL import Image, ImageOps
-import ISTA
-import LCA
+import classical.ISTA as ISTA
+import classical.LCA as LCA
 from SNN import spiking_LCA as SLCA
 from SNN import latency_SLCA as LSLCA
 

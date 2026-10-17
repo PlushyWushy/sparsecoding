@@ -10,8 +10,8 @@ import argparse
 import os
 import numpy as np
 from PIL import Image, ImageOps
-import ISTA
-import LCA
+import classical.ISTA as ISTA
+import classical.LCA as LCA
 from SNN import latency_SLCA as LSLCA
 from sparse_code_image import to_patches, from_patches, save
 

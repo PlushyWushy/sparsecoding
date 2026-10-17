@@ -6,7 +6,7 @@ import torch
 import matplotlib.pyplot as plt
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))  # so LCA.py in the folder above can be imported
-import LCA
+import classical.LCA as LCA
 
 T = 200000
 def spiking_LCA(input, lamby, Phi, lr, epsilon, T, num_bases, record=True, dt=None):   # T = number of steps, dt = simulated time per step
