@@ -1,9 +1,10 @@
 """
-Sparse code a color image in 8x8 patches with ISTA or LCA, one color channel at a time, and save the reconstruction.
+Sparse code a color image in 8x8 patches with ISTA, LCA or latency-coded spiking LCA, one color channel at a time, and save the reconstruction.
 
 Usage:
     python sparse_code_image_rgb.py --method ista --image images/image.JPEG
     python sparse_code_image_rgb.py --method lca --image images/image.JPEG --max-side 0   (0 = full resolution)
+    python sparse_code_image_rgb.py --method latency_slca --image images/image.JPEG
 """
 import argparse
 import os
@@ -11,6 +12,7 @@ import numpy as np
 from PIL import Image, ImageOps
 import ISTA
 import LCA
+from SNN import latency_SLCA as LSLCA
 from sparse_code_image import to_patches, from_patches, save
 
 def load_rgb(path, max_side):
@@ -33,9 +35,13 @@ def code_channel(channel, method):
     if method == "ista":
         Phi = ISTA.Phi
         A = ISTA.ISTA(X, ISTA.lamby, Phi, ISTA.lr, Phi.shape[1])
-    else:
+    elif method == "lca":
         Phi = LCA.Phi
         A = LCA.LCA(X, LCA.lamby, Phi, LCA.lr, LCA.epsilon, Phi.shape[1])
+    else:
+        T = np.percentile(np.abs(X), 99.9)   # cycle length: covers 99.9% of ON/OFF inputs
+        A = LSLCA.spiking_LCA(X, LCA.lamby, LCA.Phi, LCA.lr, LCA.epsilon, LSLCA.S, T, 2 * LCA.Phi.shape[1], record=False).numpy()
+        Phi = np.concatenate([LCA.Phi, -LCA.Phi], axis=1)   # A has one coefficient per doubled-dictionary atom
 
     #undo the preprocessing and put the patches back together
     recon = from_patches((Phi @ A) * scale + means, shape)
@@ -43,7 +49,7 @@ def code_channel(channel, method):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", choices=["ista", "lca"], required=True)
+    parser.add_argument("--method", choices=["ista", "lca", "latency_slca"], required=True)
     parser.add_argument("--image", required=True)
     parser.add_argument("--max-side", type=int, default=512, help="downscale so the longest side is at most this many pixels (0 = no downscaling)")
     args = parser.parse_args()

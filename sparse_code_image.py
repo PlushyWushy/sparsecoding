@@ -1,9 +1,11 @@
 """
-Sparse code an image in 8x8 patches with ISTA or LCA, and save the reconstruction.
+Sparse code an image in 8x8 patches with ISTA, LCA or spiking LCA, and save the reconstruction.
 
 Usage:
     python sparse_code_image.py --method ista --image images/image.JPEG
     python sparse_code_image.py --method lca --image images/image.JPEG --max-side 0   (0 = full resolution)
+    python sparse_code_image.py --method spiking_lca --image images/image.JPEG
+    python sparse_code_image.py --method latency_slca --image images/image.JPEG
 """
 import argparse
 import os
@@ -11,6 +13,8 @@ import numpy as np
 from PIL import Image, ImageOps
 import ISTA
 import LCA
+from SNN import spiking_LCA as SLCA
+from SNN import latency_SLCA as LSLCA
 
 PATCH = 8
 
@@ -39,7 +43,7 @@ def save(img, path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", choices=["ista", "lca"], required=True)
+    parser.add_argument("--method", choices=["ista", "lca", "spiking_lca", "latency_slca"], required=True)
     parser.add_argument("--image", required=True)
     parser.add_argument("--max-side", type=int, default=512, help="downscale so the longest side is at most this many pixels (0 = no downscaling)")
     args = parser.parse_args()
@@ -49,6 +53,7 @@ if __name__ == "__main__":
     print(f"image {shape[1]}x{shape[0]} -> {X.shape[1]} patches")
 
     #remove each patch's mean brightness, then scale so values are ~unit variance like the random test images
+    #(for spiking LCA this is the retina's center-surround step; spiking_LCA then splits X into ON/OFF channels)
     means = X.mean(axis=0)
     X = X - means
     scale = X.std() or 1.0
@@ -57,13 +62,27 @@ if __name__ == "__main__":
     if args.method == "ista":
         Phi = ISTA.Phi
         A = ISTA.ISTA(X, ISTA.lamby, Phi, ISTA.lr, Phi.shape[1])
-    else:
+        recon = from_patches((Phi @ A) * scale + means, shape)
+        original = img[:shape[0], :shape[1]]
+    elif args.method == "lca":
         Phi = LCA.Phi
         A = LCA.LCA(X, LCA.lamby, Phi, LCA.lr, LCA.epsilon, Phi.shape[1])
+        recon = from_patches((Phi @ A) * scale + means, shape)
+        original = img[:shape[0], :shape[1]]
+    elif args.method == "spiking_lca":
+        Phi = LCA.Phi
+        A = SLCA.spiking_LCA(X, LCA.lamby, Phi, LCA.lr, LCA.epsilon, SLCA.T, 2 * Phi.shape[1], record=False).numpy()
+        recon = from_patches((np.concatenate([Phi, -Phi], axis=1) @ A) * scale + means, shape)
+        original = img[:shape[0], :shape[1]]
+    else:
+        Phi = LCA.Phi
+        T = np.percentile(np.abs(X), 99.9)   # cycle length: covers 99.9% of ON/OFF inputs; the rest saturate (spike at step 0)
+        A = LSLCA.spiking_LCA(X, LCA.lamby, Phi, LCA.lr, LCA.epsilon, LSLCA.S, T, 2 * Phi.shape[1], record=False).numpy()
+        recon = from_patches((np.concatenate([Phi, -Phi], axis=1) @ A) * scale + means, shape)
+        original = img[:shape[0], :shape[1]]
 
     #undo the preprocessing and put the patches back together
-    recon = from_patches((Phi @ A) * scale + means, shape)
-    original = img[:shape[0], :shape[1]]
+
 
     mse = np.mean((recon - original) ** 2)
     print(f"MSE: {mse:.6f}   PSNR: {10 * np.log10(1 / mse):.2f} dB")

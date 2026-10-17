@@ -3,10 +3,8 @@ import matplotlib.pyplot as plt
 
 dt, tau, theta, T = 1e-3, 2e-2, 1.0, 500
 beta = torch.exp(torch.tensor(-dt / tau))
-I = torch.linspace(0, 5, 50)                               # constant input, same units as v
-
+I = torch.linspace(0, 5, 50)                              
 v = torch.linspace(0, 0, 50)
-
 
 vs, spikes = [], []
 for t in range(T):
