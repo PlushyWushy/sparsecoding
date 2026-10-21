@@ -12,6 +12,7 @@ import numpy as np
 from PIL import Image, ImageOps
 import classical.ISTA as ISTA
 import classical.LCA as LCA
+import SNN.config as config
 from SNN import latency_SLCA as LSLCA
 from sparse_code_image import to_patches, from_patches, save
 
@@ -40,8 +41,8 @@ def code_channel(channel, method):
         A = LCA.LCA(X, LCA.lamby, Phi, LCA.lr, LCA.epsilon, Phi.shape[1])
     else:
         T = np.percentile(np.abs(X), 99.9)   # cycle length: covers 99.9% of ON/OFF inputs
-        A = LSLCA.spiking_LCA(X, LCA.lamby, LCA.Phi, LCA.lr, LCA.epsilon, LSLCA.S, T, 2 * LCA.Phi.shape[1], record=False).numpy()
-        Phi = np.concatenate([LCA.Phi, -LCA.Phi], axis=1)   # A has one coefficient per doubled-dictionary atom
+        A = LSLCA.spiking_LCA(X, config.lamby, config.Phi, config.lr, config.epsilon, LSLCA.S, T, 2 * config.Phi.shape[1], record=False).numpy()
+        Phi = np.concatenate([config.Phi, -config.Phi], axis=1)   # A has one coefficient per doubled-dictionary atom
 
     #undo the preprocessing and put the patches back together
     recon = from_patches((Phi @ A) * scale + means, shape)

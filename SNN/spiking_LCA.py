@@ -5,8 +5,8 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-sys.path.append(str(Path(__file__).resolve().parent.parent))  # so LCA.py in the folder above can be imported
-import classical.LCA as LCA
+sys.path.append(str(Path(__file__).resolve().parent.parent))  # so SNN.config can be imported when running this file directly
+import SNN.config as config
 
 T = 200000
 def spiking_LCA(input, lamby, Phi, lr, epsilon, T, num_bases, record=True, dt=None):   # T = number of steps, dt = simulated time per step
@@ -47,9 +47,9 @@ def spiking_LCA(input, lamby, Phi, lr, epsilon, T, num_bases, record=True, dt=No
     return a, torch.stack(vs), spikes
 
 if __name__ == "__main__":
-    Phi = LCA.Phi
-    image = LCA.image - LCA.image.mean()
-    a, vs, spikes = spiking_LCA(image, LCA.lamby, Phi, LCA.lr, LCA.epsilon, T, 2 * Phi.shape[1])
+    Phi = config.Phi
+    image = config.image - config.image.mean()
+    a, vs, spikes = spiking_LCA(image, config.lamby, Phi, config.lr, config.epsilon, T, 2 * Phi.shape[1])
     print(a)
     plt.imshow(spikes.T, aspect='auto', interpolation='nearest')
     plt.show()

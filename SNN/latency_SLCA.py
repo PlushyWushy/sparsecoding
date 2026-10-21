@@ -5,8 +5,8 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-sys.path.append(str(Path(__file__).resolve().parent.parent))  # so LCA.py in the folder above can be imported
-import classical.LCA as LCA
+sys.path.append(str(Path(__file__).resolve().parent.parent))  # so SNN.config can be imported when running this file directly
+import SNN.config as config
 
 S = 500
 cycles = 400
@@ -17,7 +17,7 @@ def spiking_LCA(input, lamby, Phi, lr, epsilon, S, T, num_bases, record=True):  
     I = torch.eye(num_bases)
     feedforward = lr * torch.cat([Phi, -Phi]).T * epsilon  #On Off split
     recurrent = (I - lr * (Phi.T @ Phi)) * epsilon         
-                               # IF threshold: v gains u - lamby*lr per step, so spikes per step = LCA's a
+                            
     u = torch.zeros_like(feedforward @ x) # same shape as the input current, so x can be one patch or a matrix of patches (one per column)
     u_prev = torch.zeros_like(feedforward @ x)   
     v = torch.zeros_like(u)
@@ -59,10 +59,10 @@ def spiking_LCA(input, lamby, Phi, lr, epsilon, S, T, num_bases, record=True):  
     return a, torch.stack(vs), spikes
 
 if __name__ == "__main__":
-    Phi = LCA.Phi
-    image = LCA.image - LCA.image.mean()
+    Phi = config.Phi
+    image = config.image - config.image.mean()
     T = np.abs(image).max()   # cycle covers the largest ON/OFF input
-    a, vs, spikes = spiking_LCA(image, LCA.lamby, Phi, LCA.lr, LCA.epsilon, S, T, 2 * Phi.shape[1])
+    a, vs, spikes = spiking_LCA(image, config.lamby, Phi, config.lr, config.epsilon, S, T, 2 * Phi.shape[1])
     print(a)
     plt.imshow(spikes.T, aspect='auto', interpolation='nearest')
     plt.show()

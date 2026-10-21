@@ -1,11 +1,12 @@
 """
-Sparse code an image in 8x8 patches with ISTA, LCA or spiking LCA, and save the reconstruction.
+Sparse code an image in 8x8 patches with ISTA, LCA or spiking LCA (rate, latency or temporal pattern coded), and save the reconstruction.
 
 Usage:
     python sparse_code_image.py --method ista --image images/image.JPEG
     python sparse_code_image.py --method lca --image images/image.JPEG --max-side 0   (0 = full resolution)
     python sparse_code_image.py --method spiking_lca --image images/image.JPEG
     python sparse_code_image.py --method latency_slca --image images/image.JPEG
+    python sparse_code_image.py --method temporal_pattern_slca --image images/image.JPEG
 """
 import argparse
 import os
@@ -13,8 +14,10 @@ import numpy as np
 from PIL import Image, ImageOps
 import classical.ISTA as ISTA
 import classical.LCA as LCA
+import SNN.config as config
 from SNN import spiking_LCA as SLCA
 from SNN import latency_SLCA as LSLCA
+from SNN import temporal_pattern_SLCA as TPSLCA
 
 PATCH = 8
 
@@ -43,7 +46,7 @@ def save(img, path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", choices=["ista", "lca", "spiking_lca", "latency_slca"], required=True)
+    parser.add_argument("--method", choices=["ista", "lca", "spiking_lca", "latency_slca", "temporal_pattern_slca"], required=True)
     parser.add_argument("--image", required=True)
     parser.add_argument("--max-side", type=int, default=512, help="downscale so the longest side is at most this many pixels (0 = no downscaling)")
     args = parser.parse_args()
@@ -70,14 +73,20 @@ if __name__ == "__main__":
         recon = from_patches((Phi @ A) * scale + means, shape)
         original = img[:shape[0], :shape[1]]
     elif args.method == "spiking_lca":
-        Phi = LCA.Phi
-        A = SLCA.spiking_LCA(X, LCA.lamby, Phi, LCA.lr, LCA.epsilon, SLCA.T, 2 * Phi.shape[1], record=False).numpy()
+        Phi = config.Phi
+        A = SLCA.spiking_LCA(X, config.lamby, Phi, config.lr, config.epsilon, SLCA.T, 2 * Phi.shape[1], record=False).numpy()
+        recon = from_patches((np.concatenate([Phi, -Phi], axis=1) @ A) * scale + means, shape)
+        original = img[:shape[0], :shape[1]]
+    elif args.method == "latency_slca":
+        Phi = config.Phi
+        T = np.percentile(np.abs(X), 99.9)   # cycle length: covers 99.9% of ON/OFF inputs; the rest saturate (spike at step 0)
+        A = LSLCA.spiking_LCA(X, config.lamby, Phi, config.lr, config.epsilon, LSLCA.S, T, 2 * Phi.shape[1], record=False).numpy()
         recon = from_patches((np.concatenate([Phi, -Phi], axis=1) @ A) * scale + means, shape)
         original = img[:shape[0], :shape[1]]
     else:
-        Phi = LCA.Phi
-        T = np.percentile(np.abs(X), 99.9)   # cycle length: covers 99.9% of ON/OFF inputs; the rest saturate (spike at step 0)
-        A = LSLCA.spiking_LCA(X, LCA.lamby, Phi, LCA.lr, LCA.epsilon, LSLCA.S, T, 2 * Phi.shape[1], record=False).numpy()
+        Phi = config.Phi
+        T = np.percentile(np.abs(X), 99.9)   # representable range: covers 99.9% of ON/OFF inputs; the rest saturate (every bit fires)
+        A = TPSLCA.spiking_LCA(X, config.lamby, Phi, config.lr, config.epsilon, TPSLCA.S, T, 2 * Phi.shape[1], record=False).numpy()
         recon = from_patches((np.concatenate([Phi, -Phi], axis=1) @ A) * scale + means, shape)
         original = img[:shape[0], :shape[1]]
 
