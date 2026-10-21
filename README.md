@@ -1,6 +1,6 @@
 # Sparse Coding for Spiking Neural networks
 
-See [`SNN/latency_SLCA.py`](SNN/latency_SLCA.py) for latest implementation, and see [`AlternativeCodingMethods.pdf`](AlternativeCodingMethods.pdf) for the formulation.
+See [`AlternativeCodingMethods.pdf`](AlternativeCodingMethods.pdf) for formulations.
 
 ---
 
