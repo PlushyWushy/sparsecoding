@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 sys.path.append(str(Path(__file__).resolve().parent.parent))  # so SNN.config can be imported when running this file directly
 import SNN.config as config
 
-T = 200000
+T = 204800
 def spiking_LCA(input, lamby, Phi, lr, epsilon, T, num_bases, record=True, dt=None):   # T = number of steps, dt = simulated time per step
     Phi = torch.tensor(np.concatenate([Phi, -Phi], axis=1), dtype=torch.float32) #Doubled Dictionary
     x = torch.tensor(input, dtype=torch.float32)   

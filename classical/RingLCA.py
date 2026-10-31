@@ -1,3 +1,7 @@
+"""
+Global decoupling of form and movement
+"""
+
 import numpy as np
 
 lr = 0.0027
@@ -5,9 +9,9 @@ lamby = 1.0
 def wavelet(idx):
     return np.exp(-(idx**2))*np.cos(2*np.pi*idx)
 rng = np.random.default_rng(0)
-Phi = wavelet(np.arange(64)[:, None] - (np.arange(128)/2)[None, :])
+Phi = wavelet(np.arange(64)[:, None] - (np.arange(128)/2)[None, :]) #wavelet basis functions
 
-
+#TODO: Find way to optimize discrete phase and implement RingLCA; current code is normal LCA
 image = rng.standard_normal(64)
 epsilon = 0.1
 print(Phi)
