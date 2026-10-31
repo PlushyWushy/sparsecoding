@@ -31,7 +31,8 @@ def spiking_LCA(input, lamby, Phi, lr, epsilon, S, T, num_bases, record=True):  
         u_prev = u
         u = (1-epsilon)*u
         """Encoding"""
-        v = u_prev - lr*lamby + q / 2   # IF neuron starts at u - lambda, no input current; + q/2 rounds to nearest instead of flooring (no bias)
+        v = torch.clamp(v, min=-q)
+        v += u_prev - lr*lamby# IF neuron starts at u - lambda, but we add to previous leftover state to have it average out rounding error over time           Deprecated:  + q / 2   # IF neuron starts at u - lambda, no input current; + q/2 rounds to nearest instead of flooring (no bias)
         a_last = torch.zeros_like(u)   # this cycle's decoded output
         for t in range(S):
             s = v >= theta[t] #spikes: bit t of (u - lambda)

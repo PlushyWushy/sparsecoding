@@ -1,0 +1,5 @@
+image 512x336 -> 2688 patches
+rate: 204800 steps (dt=0.173, 35480 time units), 57736 recurrent spikes/patch, 1402844 input spikes/patch, 1365.0s
+MSE: 0.000198   PSNR: 37.03 dB
+active coefficients per patch: 27.0 / 128
+saved /private/tmp/claude-501/-Users-chairstands-Desktop-sparsecoding/1e9e199b-ed24-4483-8d42-ab78a7d6e42a/scratchpad/lam25/kodim06/gray.png and /private/tmp/claude-501/-Users-chairstands-Desktop-sparsecoding/1e9e199b-ed24-4483-8d42-ab78a7d6e42a/scratchpad/lam25/kodim06/spiking_lca_recon.png

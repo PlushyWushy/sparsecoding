@@ -22,23 +22,27 @@ def spiking_LCA(input, lamby, Phi, lr, epsilon, S, T, num_bases, record=True):  
     u_prev = torch.zeros_like(feedforward @ x)   
     v = torch.zeros_like(u)
     dt = T / S
-    theta = T + lr*lamby + dt / 2 #average amount over threshold is dt / 2, so we add to ensure no bias
+    theta = T + lr*lamby # add dt to account for the dt added at step 0  Deprecated: + dt / 2 #average amount over threshold is dt / 2, so we add to ensure no bias
     vs, spikes = [], []
     s = v >= theta
     t_r = torch.zeros_like(u) - 1
     start, n_out, n_in = time.perf_counter(), 0, 0   # wall-clock and spike counts, for comparing against spiking_LCA
-  
+    fired = torch.zeros_like(v)
     for c in range(cycles):
         u_prev = u
         u = (1-epsilon)*u
-        """Encoding"""
         I = 0
-        v = u_prev
-        t_first = torch.full_like(u, S)   # step of each neuron's first spike this cycle; S = hasn't fired
+        v = torch.clamp(v - (-(fired - 1))*theta, min=0)
+        fired = torch.zeros_like(v)
+        v += u_prev # IF neuron with u_prev added to previous leftovers, so over time, it averages the rounding error out
+        t_first = torch.full_like(u, S) # step of each neuron's first spike this cycle; S = hasn't fired
+        
         for t in range(S):
-            v = v + dt              # IF neuron with starting membrane state u_prev
+            
             s = v >= theta #spikes
+            fired += s
             v = v - (s).float() * theta
+            v = v + dt * (-(fired - 1))
             input_spikes_feedforward = (torch.clamp(torch.round(S - x/dt), min=0) == t).float()  
             input_spikes_recurrent = s.float()
             n_out, n_in = n_out + s.sum(), n_in + input_spikes_feedforward.sum()
