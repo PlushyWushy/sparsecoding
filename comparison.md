@@ -25,13 +25,6 @@ Coded images are decoded from the final state. "Active" is the number of nonzero
 | Latency | 35.45 ± 2.40 | 12.78 ± 1.23 | 31.0 ± 10.2 | **12,215** | **24,952** | 204,800 | 734 s |
 | Temporal pattern | 35.45 ± 2.40 | 12.78 ± 1.22 | 31.0 ± 10.3 | 18,098 | 72,266 | **3,600** | **10.7 s** |
 
-Paired PSNR differences (same image, 95% CI):
-
-| Comparison | Mean difference | Images where the first is better |
-|---|---:|---:|
-| Temporal pattern − latency | +0.002 ± 0.007 dB | 11 / 24 |
-| Rate − latency | +7.95 ± 0.25 dB | 24 / 24 |
-| Rate − temporal pattern | +7.95 ± 0.25 dB | 24 / 24 |
 
 Wall-clock was measured with 6 jobs running at once, 3 threads each.
 
