@@ -34,14 +34,14 @@ def learn_phi(X, num_bases, lamby, rng, iters=10000, batch=256, eta=10.0, steps=
     #Gaussian dictionary's columns, so lamby means the same thing it did before
     norm = np.sqrt(X.shape[0])
     Phi = rng.standard_normal((X.shape[0], num_bases))
-    Phi *= norm / np.linalg.norm(Phi, axis=0)
+    Phi *= norm / np.linalg.norm(Phi, axis=0) #initialize norm
     for it in range(iters):
         x = X[:, rng.integers(X.shape[1], size=batch)]
         lr = 1 / np.linalg.norm(Phi, 2) ** 2   # largest stable step for ISTA
         a = ISTA.ISTA(x, lamby, Phi, lr, num_bases, steps)
         residual = x - Phi @ a
         Phi += eta * residual @ a.T / batch   # -dE/dPhi, averaged over the batch
-        Phi *= norm / np.maximum(np.linalg.norm(Phi, axis=0), 1e-12)   # otherwise Phi grows and a shrinks to dodge the L1 penalty
+        Phi *= norm / np.maximum(np.linalg.norm(Phi, axis=0), 1e-12)   # otherwise Phi arbitrarily grows and a shrinks which is cheating
         if it % 100 == 0 or it == iters - 1:
             energy = np.mean(0.5 * np.sum(residual ** 2, axis=0) + lamby * np.sum(np.abs(a), axis=0))
             print(f"iter {it}: energy {energy:.4f}, active {np.count_nonzero(a, axis=0).mean():.1f} / {num_bases}")

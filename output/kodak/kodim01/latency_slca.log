@@ -1,0 +1,5 @@
+image 512x336 -> 2688 patches
+latency: 204800 steps (dt=0.00896, 1836 time units), 18097 recurrent spikes/patch, 25406 input spikes/patch, 694.4s
+MSE: 0.000494   PSNR: 33.06 dB
+active coefficients per patch: 46.0 / 128
+saved output/kodak/kodim01/gray.png and output/kodak/kodim01/latency_slca_recon.png

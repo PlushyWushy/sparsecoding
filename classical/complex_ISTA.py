@@ -62,7 +62,7 @@ if __name__ == "__main__":
         a_prev = a
 
     name = Path(args.movie).stem
-    os.makedirs("output", exist_ok=True)
-    out = os.path.join("output", f"{name}_complex_ista.npz")
+    os.makedirs(os.path.join("output", name), exist_ok=True)
+    out = os.path.join("output", name, "complex_ista.npz")
     np.savez(out, A=A, d_amp=d_amp, d_phase=d_phase)
     print(f"saved {out} (A: coefficients per frame, d_amp/d_phase: change between consecutive frames)")

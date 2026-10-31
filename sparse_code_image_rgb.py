@@ -69,8 +69,9 @@ if __name__ == "__main__":
     mse = np.mean((recon - original) ** 2)
     print(f"MSE: {mse:.6f}   PSNR: {10 * np.log10(1 / mse):.2f} dB")
 
-    os.makedirs("output", exist_ok=True)
     name = os.path.splitext(os.path.basename(args.image))[0]
-    save(original, os.path.join("output", f"{name}_rgb.png"))
-    save(recon, os.path.join("output", f"{name}_{args.method}_rgb_recon.png"))
-    print(f"saved output/{name}_rgb.png and output/{name}_{args.method}_rgb_recon.png")
+    out = os.path.join("output", name)   # one folder per image, shared with sparse_code_image.py
+    os.makedirs(out, exist_ok=True)
+    save(original, os.path.join(out, "rgb.png"))
+    save(recon, os.path.join(out, f"{args.method}_rgb_recon.png"))
+    print(f"saved {out}/rgb.png and {out}/{args.method}_rgb_recon.png")

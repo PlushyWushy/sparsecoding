@@ -1,0 +1,4 @@
+image 512x384 -> 3072 patches
+MSE: 0.002674   PSNR: 25.73 dB
+active coefficients per patch: 0.0 / 128
+saved output/image/gray.png and output/image/mean_recon.png

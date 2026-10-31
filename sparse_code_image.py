@@ -46,9 +46,10 @@ def save(img, path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", choices=["ista", "lca", "spiking_lca", "latency_slca", "temporal_pattern_slca"], required=True)
+    parser.add_argument("--method", choices=["ista", "lca", "spiking_lca", "latency_slca", "temporal_pattern_slca", "mean"], required=True)
     parser.add_argument("--image", required=True)
     parser.add_argument("--max-side", type=int, default=512, help="downscale so the longest side is at most this many pixels (0 = no downscaling)")
+    parser.add_argument("--out-dir", default="output", help="results go in <out-dir>/<image name>/")
     args = parser.parse_args()
 
     img = load_grayscale(args.image, args.max_side)
@@ -83,13 +84,19 @@ if __name__ == "__main__":
         A = LSLCA.spiking_LCA(X, config.lamby, Phi, config.lr, config.epsilon, LSLCA.S, T, 2 * Phi.shape[1], record=False).numpy()
         recon = from_patches((np.concatenate([Phi, -Phi], axis=1) @ A) * scale + means, shape)
         original = img[:shape[0], :shape[1]]
-    else:
+    elif args.method == 'temporal_pattern_slca':
         Phi = config.Phi
         T = np.percentile(np.abs(X), 99.9)   # representable range: covers 99.9% of ON/OFF inputs; the rest saturate (every bit fires)
         A = TPSLCA.spiking_LCA(X, config.lamby, Phi, config.lr, config.epsilon, TPSLCA.S, T, 2 * Phi.shape[1], record=False).numpy()
         recon = from_patches((np.concatenate([Phi, -Phi], axis=1) @ A) * scale + means, shape)
         original = img[:shape[0], :shape[1]]
-
+    elif args.method == "mean":   # control: all-zero code, so each patch is just its mean brightness (what every method adds detail to)
+        Phi = config.Phi
+        A = np.zeros((Phi.shape[1], X.shape[1]))
+        recon = from_patches((Phi @ A) * scale + means, shape)
+        original = img[:shape[0], :shape[1]]
+    else:
+        print('You ought to choose a method!')
     #undo the preprocessing and put the patches back together
 
 
@@ -97,8 +104,9 @@ if __name__ == "__main__":
     print(f"MSE: {mse:.6f}   PSNR: {10 * np.log10(1 / mse):.2f} dB")
     print(f"active coefficients per patch: {np.count_nonzero(A, axis=0).mean():.1f} / {Phi.shape[1]}")
 
-    os.makedirs("output", exist_ok=True)
     name = os.path.splitext(os.path.basename(args.image))[0]
-    save(original, os.path.join("output", f"{name}_gray.png"))
-    save(recon, os.path.join("output", f"{name}_{args.method}_recon.png"))
-    print(f"saved output/{name}_gray.png and output/{name}_{args.method}_recon.png")
+    out = os.path.join(args.out_dir, name)   # one folder per image, holding the original and every method's reconstruction
+    os.makedirs(out, exist_ok=True)
+    save(original, os.path.join(out, "gray.png"))
+    save(recon, os.path.join(out, f"{args.method}_recon.png"))
+    print(f"saved {out}/gray.png and {out}/{args.method}_recon.png")
