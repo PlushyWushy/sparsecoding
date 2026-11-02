@@ -1,7 +1,8 @@
 # Sparse Coding for Spiking Neural networks
 
-See [`AlternativeCodingMethods.pdf`](AlternativeCodingMethods.pdf) for formulations.
+See [`Alternative_Coding_Methods.pdf`](Alternative_Coding_Methods.pdf) for formulations.
 
+To visualize Phi, run python `python SNN/config.py n` for an index n in Phi, or just run `python SNN/config.py` to see all of it.
 ---
 
 # Spiking LCA comparison on Kodak
