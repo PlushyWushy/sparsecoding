@@ -49,9 +49,12 @@ def learn_phi(X, num_bases, lamby, rng, iters=10000, batch=256, eta=10.0, steps=
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    rng = np.random.default_rng(0)
-    Phi = learn_phi(sample_patches(sys.argv[1:], 100000, rng), 128, 1.0, rng)
-    fig, axes = plt.subplots(8, 16, figsize=(16, 8))
-    for k, ax in enumerate(axes.flat):
-        ax.imshow(Phi[:, k].reshape(8, 8), cmap="gray"); ax.axis("off")
-    plt.show()
+    rng = np.random.default_rng(1)
+    if sys.argv[1:]:
+        Phi = learn_phi(sample_patches(sys.argv[1:], 100000, rng), 128, 1.0, rng) 
+        fig, axes = plt.subplots(8, 16, figsize=(16, 8))
+        for k, ax in enumerate(axes.flat):
+            ax.imshow(Phi[:, k].reshape(8, 8), cmap="gray"); ax.axis("off")
+        plt.show()
+    else:
+        print('You need to run this on an image!')

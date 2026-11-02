@@ -1,7 +1,9 @@
 import glob
 from pathlib import Path
 import numpy as np
-from SNN.phi_learner import sample_patches, learn_phi
+from phi_learner import sample_patches, learn_phi
+import matplotlib.pyplot as plt
+import sys
 
 # parameters shared by the spiking LCAs (rate, latency, temporal pattern); start from classical/LCA.py's values
 lamby = 1.0
@@ -21,3 +23,9 @@ else:
 
 lr = 1 / np.linalg.norm(Phi, 2) ** 2   # largest stable step; this is where 0.0027 came from for the old random Gaussian Phi
 image = rng.standard_normal(64)
+if __name__ == '__main__':
+    print(Phi)
+    if sys.argv[1]:
+        plt.plot(Phi[int(sys.argv[1])]); plt.show()
+    else:
+        plt.plot(Phi); plt.show()
