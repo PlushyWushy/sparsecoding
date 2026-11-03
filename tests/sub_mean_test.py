@@ -28,7 +28,7 @@ recon = X
 recon = np.clip((recon / np.max(abs(recon)))*0.5 + 0.5, min=0, max=1) * 255
 def save(img, path):
     Image.fromarray(img.astype(np.uint8)).save(path)
-save(recon, "sub_meaned.png")
+save(recon, "tests/sub_meaned.png")
 
 
 
