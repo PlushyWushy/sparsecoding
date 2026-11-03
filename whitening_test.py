@@ -1,0 +1,27 @@
+
+import argparse
+import os
+import numpy as np
+from PIL import Image, ImageOps
+def load_grayscale(path, max_side):
+    img = Image.open(path)
+    img = ImageOps.exif_transpose(img)
+    img = img.convert("L") 
+    if max_side and max(img.size) > max_side:
+        img.thumbnail((max_side, max_side)) 
+    return np.asarray(img, dtype=float) / 255.0 
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--image", required=True)
+parser.add_argument("--max-side", type=int, default=512, help="downscale so the longest side is at most this many pixels (0 = no downscaling)")
+args = parser.parse_args()
+X = load_grayscale(args.image, args.max_side)
+F = np.fft.fft2(X)
+print(F)
+for i in range(len(F)):
+    for j in range(len(i)):
+        
+print(F)
+
+

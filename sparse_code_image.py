@@ -10,6 +10,7 @@ Usage:
 """
 import argparse
 import os
+import sys
 import numpy as np
 from PIL import Image, ImageOps
 import classical.ISTA as ISTA
@@ -18,6 +19,7 @@ import SNN.config as config
 from SNN import spiking_LCA as SLCA
 from SNN import latency_SLCA as LSLCA
 from SNN import temporal_pattern_SLCA as TPSLCA
+
 
 PATCH = 8
 
@@ -50,6 +52,7 @@ if __name__ == "__main__":
     parser.add_argument("--image", required=True)
     parser.add_argument("--max-side", type=int, default=512, help="downscale so the longest side is at most this many pixels (0 = no downscaling)")
     parser.add_argument("--out-dir", default="output", help="results go in <out-dir>/<image name>/")
+    parser.add_argument("--preprocess", choices=["whiten", "sub-mean"] default="whiten", help="preprocess the image either by whitening or subtracting the mean")
     args = parser.parse_args()
 
     img = load_grayscale(args.image, args.max_side)
@@ -58,10 +61,12 @@ if __name__ == "__main__":
 
     #remove each patch's mean brightness, then scale so values are ~unit variance like the random test images
     #(for spiking LCA this is the retina's center-surround step; spiking_LCA then splits X into ON/OFF channels)
-    means = X.mean(axis=0)
-    X = X - means
-    scale = X.std() or 1.0
-    X = X / scale
+    if args.preprocess == 'sub-mean':   
+        means = X.mean(axis=0)
+        X = X - means
+        scale = X.std() or 1.0
+        X = X / scale
+    elif args.preprocess == 'whiten':
 
     if args.method == "ista":
         Phi = ISTA.Phi
