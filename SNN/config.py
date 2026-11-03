@@ -1,15 +1,17 @@
 import glob
+import sys
 from pathlib import Path
 import numpy as np
-from phi_learner import sample_patches, learn_phi
 import matplotlib.pyplot as plt
-import sys
 
+sys.path.append(str(Path(__file__).resolve().parent.parent)) 
+from SNN.phi_learner import sample_patches, learn_phi
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 # parameters shared by the spiking LCAs (rate, latency, temporal pattern); start from classical/LCA.py's values
 lamby = 1.0
 epsilon = 0.1
 num_bases = 128
-dataset = sorted(glob.glob(str(Path(__file__).resolve().parent.parent / "images" / "kodak" / "*.png")))   # images Phi is learned from (Kodak, 24 natural images)
+dataset = sorted(glob.glob(str(Path(__file__).resolve().parent.parent / "images" / "kodak" / "*.png")))   
 rng = np.random.default_rng(0)
 
 # learning takes a few minutes, so the learned Phi is cached and only relearned when the settings above change

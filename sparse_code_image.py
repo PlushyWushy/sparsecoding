@@ -52,7 +52,7 @@ if __name__ == "__main__":
     parser.add_argument("--image", required=True)
     parser.add_argument("--max-side", type=int, default=512, help="downscale so the longest side is at most this many pixels (0 = no downscaling)")
     parser.add_argument("--out-dir", default="output", help="results go in <out-dir>/<image name>/")
-    parser.add_argument("--preprocess", choices=["whiten", "sub-mean"] default="whiten", help="preprocess the image either by whitening or subtracting the mean")
+    parser.add_argument("--preprocess", choices=["whiten", "sub-mean"], default="sub-mean", help="preprocess the image either by whitening or subtracting the mean")
     args = parser.parse_args()
 
     img = load_grayscale(args.image, args.max_side)
@@ -66,8 +66,21 @@ if __name__ == "__main__":
         X = X - means
         scale = X.std() or 1.0
         X = X / scale
-    elif args.preprocess == 'whiten':
-
+    elif args.preprocess == 'whiten': #TODO: Fix reconstruction, relearn Phi using the whiten preprocessing
+        f_0 = 0.4
+        
+        F = np.fft.fft2(X)
+        
+        fy = np.fft.fftfreq(F.shape[0]) 
+        fx = np.fft.fftfreq(F.shape[1]) 
+        for i in range(len(F)):
+            for j in range(len(F[i])):
+                f = np.sqrt(fy[i]**2 + fx[j]**2)
+                F[i][j] = F[i][j] * f*np.exp(-((f/f_0)**4))
+        X = np.fft.ifft2(F).real
+        scale = np.max(X)
+        X = X / scale
+        means = 0.5
     if args.method == "ista":
         Phi = ISTA.Phi
         A = ISTA.ISTA(X, ISTA.lamby, Phi, ISTA.lr, Phi.shape[1])
