@@ -7,6 +7,7 @@ Usage:
     python sparse_code_image.py --method spiking_lca --image images/image.JPEG
     python sparse_code_image.py --method latency_slca --image images/image.JPEG
     python sparse_code_image.py --method temporal_pattern_slca --image images/image.JPEG
+    python sparse_code_image.py --method spiking_lca --image images/image.JPEG --preprocess whiten   
 """
 import argparse
 import os
@@ -19,6 +20,7 @@ import SNN.config as config
 from SNN import spiking_LCA as SLCA
 from SNN import latency_SLCA as LSLCA
 from SNN import temporal_pattern_SLCA as TPSLCA
+from SNN.phi_learner import whiten, unwhiten
 
 
 PATCH = 8
@@ -29,7 +31,7 @@ def load_grayscale(path, max_side):
     img = img.convert("L") #grayscale
     if max_side and max(img.size) > max_side:
         img.thumbnail((max_side, max_side)) #downscale, keeping aspect ratio
-    return np.asarray(img, dtype=float) / 255.0 #pixel values in [0, 1]
+    return np.asarray(img, dtype=float) / 255.0 #pixel values in [0, 1] !!!! <-
 
 def to_patches(img):
     h, w = img.shape
@@ -56,66 +58,59 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     img = load_grayscale(args.image, args.max_side)
-    X, shape = to_patches(img)
-    print(f"image {shape[1]}x{shape[0]} -> {X.shape[1]} patches")
+    img = img[:img.shape[0] - img.shape[0] % PATCH, :img.shape[1] - img.shape[1] % PATCH]   # crop so the image tiles evenly (and whiten/unwhiten see the same size)
+    original = img
 
-    #remove each patch's mean brightness, then scale so values are ~unit variance like the random test images
-    #(for spiking LCA this is the retina's center-surround step; spiking_LCA then splits X into ON/OFF channels)
-    if args.preprocess == 'sub-mean':   
+    if args.preprocess == 'sub-mean':
+        #remove each patch's mean brightness, then scale so values are ~unit variance like the random test images
+        #(spiking_LCA then splits X into ON/OFF channels)
+        X, shape = to_patches(img)
         means = X.mean(axis=0)
         X = X - means
         scale = X.std() or 1.0
         X = X / scale
-    elif args.preprocess == 'whiten': #TODO: Fix reconstruction, relearn Phi using the whiten preprocessing
-        f_0 = 0.4
-        
-        F = np.fft.fft2(X)
-        
-        fy = np.fft.fftfreq(F.shape[0]) 
-        fx = np.fft.fftfreq(F.shape[1]) 
-        for i in range(len(F)):
-            for j in range(len(F[i])):
-                f = np.sqrt(fy[i]**2 + fx[j]**2)
-                F[i][j] = F[i][j] * f*np.exp(-((f/f_0)**4))
-        X = np.fft.ifft2(F).real
-        scale = np.max(X)
+    elif args.preprocess == 'whiten':
+        #flatten the spectrum of the whole image (center-surround, like the retina), then cut into patches and scale to ~unit variance
+        mean = img.mean()   # whitening erases the mean brightness, so keep it to add back
+        X, shape = to_patches(whiten(img))
+        scale = X.std() or 1.0
         X = X / scale
-        means = 0.5
+    print(f"image {shape[1]}x{shape[0]} -> {X.shape[1]} patches")
+
     if args.method == "ista":
         Phi = ISTA.Phi
         A = ISTA.ISTA(X, ISTA.lamby, Phi, ISTA.lr, Phi.shape[1])
-        recon = from_patches((Phi @ A) * scale + means, shape)
-        original = img[:shape[0], :shape[1]]
+        X_hat = Phi @ A
     elif args.method == "lca":
         Phi = LCA.Phi
         A = LCA.LCA(X, LCA.lamby, Phi, LCA.lr, LCA.epsilon, Phi.shape[1])
-        recon = from_patches((Phi @ A) * scale + means, shape)
-        original = img[:shape[0], :shape[1]]
+        X_hat = Phi @ A
     elif args.method == "spiking_lca":
-        Phi = config.Phi
-        A = SLCA.spiking_LCA(X, config.lamby, Phi, config.lr, config.epsilon, SLCA.T, 2 * Phi.shape[1], record=False).numpy()
-        recon = from_patches((np.concatenate([Phi, -Phi], axis=1) @ A) * scale + means, shape)
-        original = img[:shape[0], :shape[1]]
+        Phi, lr = config.load_phi(args.preprocess)
+        A = SLCA.spiking_LCA(X, config.lamby, Phi, lr, config.epsilon, SLCA.T, 2 * Phi.shape[1], record=False).numpy()
+        X_hat = np.concatenate([Phi, -Phi], axis=1) @ A
     elif args.method == "latency_slca":
-        Phi = config.Phi
-        T = np.percentile(np.abs(X), 99.9)   # cycle length: covers 99.9% of ON/OFF inputs; the rest saturate (spike at step 0)
-        A = LSLCA.spiking_LCA(X, config.lamby, Phi, config.lr, config.epsilon, LSLCA.S, T, 2 * Phi.shape[1], record=False).numpy()
-        recon = from_patches((np.concatenate([Phi, -Phi], axis=1) @ A) * scale + means, shape)
-        original = img[:shape[0], :shape[1]]
+        Phi, lr = config.load_phi(args.preprocess)
+        T = np.abs(X).max()   # cycle length: covers the largest ON/OFF input
+        A = LSLCA.spiking_LCA(X, config.lamby, Phi, lr, config.epsilon, LSLCA.S, T, 2 * Phi.shape[1], record=False).numpy()
+        X_hat = np.concatenate([Phi, -Phi], axis=1) @ A
     elif args.method == 'temporal_pattern_slca':
-        Phi = config.Phi
-        T = np.percentile(np.abs(X), 99.9)   # representable range: covers 99.9% of ON/OFF inputs; the rest saturate (every bit fires)
-        A = TPSLCA.spiking_LCA(X, config.lamby, Phi, config.lr, config.epsilon, TPSLCA.S, T, 2 * Phi.shape[1], record=False).numpy()
-        recon = from_patches((np.concatenate([Phi, -Phi], axis=1) @ A) * scale + means, shape)
-        original = img[:shape[0], :shape[1]]
-    elif args.method == "mean":   # control: all-zero code, so each patch is just its mean brightness (what every method adds detail to)
-        Phi = config.Phi
+        Phi, lr = config.load_phi(args.preprocess)
+        T = np.abs(X).max()   # representable range: covers the largest ON/OFF input
+        A = TPSLCA.spiking_LCA(X, config.lamby, Phi, lr, config.epsilon, TPSLCA.S, T, 2 * Phi.shape[1], record=False).numpy()
+        X_hat = np.concatenate([Phi, -Phi], axis=1) @ A
+    elif args.method == "mean":   # control: all-zero code, so only what preprocessing removed comes back (each patch's mean for sub-mean, the image's mean for whiten)
+        Phi, lr = config.load_phi(args.preprocess)
         A = np.zeros((Phi.shape[1], X.shape[1]))
-        recon = from_patches((Phi @ A) * scale + means, shape)
-        original = img[:shape[0], :shape[1]]
+        X_hat = Phi @ A
     else:
         print('You ought to choose a method!')
+
     #undo the preprocessing and put the patches back together
+    if args.preprocess == 'sub-mean':
+        recon = from_patches(X_hat * scale + means, shape)
+    elif args.preprocess == 'whiten':
+        recon = unwhiten(from_patches(X_hat * scale, shape), mean)
 
 
     mse = np.mean((recon - original) ** 2)

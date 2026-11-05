@@ -13,20 +13,38 @@ from PIL import Image, ImageOps
 sys.path.append(str(Path(__file__).resolve().parent.parent))  # so classical.ISTA can be imported when running this file directly
 import classical.ISTA as ISTA
 
-def sample_patches(paths, n, rng, patch=8, max_side=512):
+def whitening_filter(shape, f_0=0.4):
+    #see whitening_test.py
+    fy = np.fft.fftfreq(shape[0])[:, None]
+    fx = np.fft.fftfreq(shape[1])[None, :]
+    f = np.sqrt(fy ** 2 + fx ** 2)
+    return f * np.exp(-(f / f_0) ** 4)
+
+def whiten(img, f_0=0.4):
+    return np.fft.ifft2(np.fft.fft2(img) * whitening_filter(img.shape, f_0)).real
+
+def unwhiten(w, mean, f_0=0.4):
+    R = whitening_filter(w.shape, f_0)
+    R = (R > 0).astype(float) * R + (R <= 0).astype(float) * 100000000
+    inverse = 1 / R
+    return np.fft.ifft2(np.fft.fft2(w) * inverse).real + mean   #  add mean back
+
+def sample_patches(paths, n, rng, patch=8, max_side=512, preprocess="sub-mean"):
     #same preprocessing as sparse_code_image.py, so Phi is learned on the statistics it will be used on
     imgs = []
     for p in paths:
         img = ImageOps.exif_transpose(Image.open(p)).convert("L")
         if max_side and max(img.size) > max_side:
             img.thumbnail((max_side, max_side))
-        imgs.append(np.asarray(img, dtype=float) / 255.0)
+        img = np.asarray(img, dtype=float) / 255.0
+        imgs.append(whiten(img) if preprocess == "whiten" else img)
     X = np.empty((patch * patch, n))
     for i in range(n):   # random (overlapping) patch positions, spread evenly over the images
         img = imgs[rng.integers(len(imgs))]
         r, c = rng.integers(img.shape[0] - patch + 1), rng.integers(img.shape[1] - patch + 1)
         X[:, i] = img[r:r + patch, c:c + patch].ravel()
-    X = X - X.mean(axis=0)   # remove each patch's mean brightness
+    if preprocess == "sub-mean":
+        X = X - X.mean(axis=0)   # remove each patch's mean brightness
     return X / (X.std() or 1.0)   # ~unit variance
 
 def learn_phi(X, num_bases, lamby, rng, iters=10000, batch=256, eta=10.0, steps=200):

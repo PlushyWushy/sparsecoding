@@ -1,0 +1,4 @@
+image 512x336 -> 2688 patches
+MSE: 0.034081   PSNR: 14.67 dB
+active coefficients per patch: 0.0 / 128
+saved output/kodak/kodim05/gray.png and output/kodak/kodim05/mean_recon.png

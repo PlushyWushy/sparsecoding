@@ -17,7 +17,7 @@ def spiking_LCA(input, lamby, Phi, lr, epsilon, T, num_bases, record=True, dt=No
     feedforward = lr * torch.cat([Phi, -Phi]).T * epsilon  #On Off split
     recurrent = (I - lr * (Phi.T @ Phi)) * epsilon         
     theta = 1.0                             
-    dt = 1.0 / np.percentile(np.abs(input), 99.9)   # same range rule as latency_SLCA: the top 0.1% of ON/OFF cells saturate at one spike per step
+    dt = 1.0 / np.abs(input).max()   # same range rule as latency_SLCA: the largest ON/OFF input fires once per step, so nothing saturates
     u = torch.zeros_like(feedforward @ x)   # same shape as the input current, so x can be one patch or a matrix of patches (one per column)
     v = torch.zeros_like(u)
     v_in = torch.zeros_like(x)              # membrane of the ON/OFF input cells

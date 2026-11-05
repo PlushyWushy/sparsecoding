@@ -1,0 +1,9 @@
+image 512x336 -> 2688 patches
+Traceback (most recent call last):
+  File "/Users/chairstands/Desktop/sparsecoding/sparse_code_image.py", line 95, in <module>
+    A = LSLCA.spiking_LCA(X, config.lamby, Phi, lr, config.epsilon, LSLCA.S, T, 2 * Phi.shape[1], record=False).numpy()
+        ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chairstands/Desktop/sparsecoding/SNN/latency_SLCA.py", line 44, in spiking_LCA
+    v = v - (s).float() * theta
+            ~~~~~~~~~^^
+KeyboardInterrupt

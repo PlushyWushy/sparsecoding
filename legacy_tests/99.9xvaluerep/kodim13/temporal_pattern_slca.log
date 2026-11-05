@@ -1,0 +1,5 @@
+image 512x336 -> 2688 patches
+temporal pattern: 3600 steps (q=0.00972), 39805 recurrent spikes/patch, 84238 input spikes/patch, 12.7s
+MSE: 0.124939   PSNR: 9.03 dB
+active coefficients per patch: 54.0 / 128
+saved output/kodak/kodim13/gray.png and output/kodak/kodim13/temporal_pattern_slca_recon.png
