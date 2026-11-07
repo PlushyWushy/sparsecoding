@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from SNN.phi_learner import sample_patches, learn_phi
 # parameters shared by the spiking LCAs (rate, latency, temporal pattern); start from classical/LCA.py's values
-lamby = 1.0
+lamby = 0.1
 epsilon = 0.1
 num_bases = 128
 dataset = sorted(glob.glob(str(Path(__file__).resolve().parent.parent / "images" / "kodak" / "*.png")))

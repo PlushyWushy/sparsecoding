@@ -70,7 +70,7 @@ if __name__ == "__main__":
         scale = X.std() or 1.0
         X = X / scale
     elif args.preprocess == 'whiten':
-        #flatten the spectrum of the whole image (center-surround, like the retina), then cut into patches and scale to ~unit variance
+        #apply whitening, then cut into patches and scale to ~unit variance
         mean = img.mean()   # whitening erases the mean brightness, so keep it to add back
         X, shape = to_patches(whiten(img))
         scale = X.std() or 1.0

@@ -1,5 +1,5 @@
 image 512x336 -> 2688 patches
-rate: 204800 steps (dt=0.0875, 17914 time units), 31174 recurrent spikes/patch, 645125 input spikes/patch, 761.0s
-MSE: 0.015191   PSNR: 18.18 dB
-active coefficients per patch: 35.2 / 128
+rate: 204800 steps (dt=0.0875, 17914 time units), 260009 recurrent spikes/patch, 645125 input spikes/patch, 778.3s
+MSE: 0.017640   PSNR: 17.54 dB
+active coefficients per patch: 54.1 / 128
 saved output/kodak/kodim03/gray.png and output/kodak/kodim03/spiking_lca_recon.png

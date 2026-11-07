@@ -16,8 +16,8 @@ Rate-coded (`spiking_lca`), latency-coded (`latency_slca`) and temporal-pattern-
 | Images | Kodak `kodim01`–`kodim24`, grayscale, downscaled to 512 px on the long side (512×336 or 336×512, 2688 patches each) |
 | Whitening | Whole image filtered in Fourier space by R(f) = f·exp(−(f/0.4)⁴), f = √(fx² + fy²), then cut into 8×8 patches and scaled to unit variance per image |
 | Unwhitening | Multiply by 1/R at every f > 0 (f = 0 set to 0), undo the scale, add the image mean back |
-| Dictionary | `SNN/phi_learned_whiten.npz`: 64×128, learned on 100k random patches of whitened Kodak images, columns at norm 8 |
-| Parameters | λ = 1.0, ε = 0.1, lr = 1/‖Φ‖₂² = 0.00257 (`SNN/config.py`) |
+| Dictionary | `SNN/phi_learned_whiten.npz`: 64×128, learned on 100k random patches of whitened Kodak images, columns at norm 1 |
+| Parameters | λ = 0.1, ε = 0.1, lr = 1/‖Φ‖₂² = 0.160 (`SNN/config.py`) |
 | Rate | 204,800 steps, dt = 1 / max\|x\| per image |
 | Latency | 400 cycles × 512 steps = 204,800 steps, T = max\|x\| per image, leftover v carried across cycles (see Rounding error) |
 | Temporal pattern | 400 cycles × 9 bits = 3,600 steps, same T, so q = T/512, the same grid as latency, leftover v carried across cycles |
@@ -29,9 +29,9 @@ PSNR = 10·log10(1/MSE) on pixels in [0, 1]. "Active" is the number of nonzero c
 | Method | PSNR (dB) | Difference from control (dB) | Active / patch | Recurrent spikes / patch | Input spikes / patch | Steps | Wall-clock / image |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Control (mean only) | 15.12 ± 2.47 | — | 0 | — | — | — | — |
-| Rate | 14.12 ± 3.01 | −1.00 ± 3.14 | 40.1 ± 6.1 | 44,797 | 860,211 | 204,800 | 762 s |
-| Latency | 14.49 ± 2.85 | −0.62 ± 3.06 | 34.6 ± 8.0 | 16,120 | 25,011 | 204,800 | 847 s |
-| Temporal pattern | 14.55 ± 2.87 | −0.56 ± 3.13 | 34.6 ± 7.9 | 21,474 | 65,999 | 3,600 | 12.7 s |
+| Rate | 13.59 ± 2.84 | −1.53 ± 3.02 | 60.1 ± 8.0 | 372,690 | 860,211 | 204,800 | 783 s |
+| Latency | 14.38 ± 2.87 | −0.74 ± 3.12 | 48.8 ± 7.9 | 23,799 | 25,011 | 204,800 | 862 s |
+| Temporal pattern | 14.38 ± 2.88 | −0.73 ± 3.12 | 48.7 ± 7.8 | 52,277 | 65,999 | 3,600 | 13.1 s |
 
 Wall-clock was measured with 6 jobs running at once, 3 threads each. Earlier results are in `legacy_tests/`. 
 
@@ -39,30 +39,30 @@ Wall-clock was measured with 6 jobs running at once, 3 threads each. Earlier res
 
 | Image | Control | Rate | Latency | TP | Active (rate) | Active (lat / TP) |
 |---|---:|---:|---:|---:|---:|---:|
-| kodim01 | 16.52 | 10.93 | 11.80 | 11.77 | 46.9 | 46.6 / 46.7 |
-| kodim02 | 22.24 | 17.55 | 17.48 | 17.17 | 44.2 | 31.3 / 31.3 |
-| kodim03 | 16.31 | 18.18 | 18.72 | 18.88 | 35.2 | 27.7 / 27.5 |
-| kodim04 | 16.67 | 17.29 | 17.33 | 17.44 | 42.6 | 34.2 / 33.9 |
-| kodim05 | 14.67 | 9.26 | 10.11 | 10.04 | 46.3 | 43.9 / 43.8 |
-| kodim06 | 12.70 | 12.47 | 13.23 | 13.17 | 42.8 | 38.8 / 38.9 |
-| kodim07 | 16.89 | 15.21 | 16.02 | 16.15 | 33.8 | 29.9 / 29.8 |
-| kodim08 | 12.44 | 8.36 | 9.08 | 9.01 | 41.9 | 41.3 / 41.2 |
-| kodim09 | 16.68 | 17.62 | 16.96 | 17.01 | 31.3 | 22.9 / 23.3 |
-| kodim10 | 16.43 | 15.68 | 16.15 | 16.21 | 36.5 | 26.3 / 26.5 |
-| kodim11 | 15.92 | 13.86 | 13.99 | 14.17 | 41.4 | 35.8 / 36.0 |
-| kodim12 | 15.04 | 15.35 | 16.96 | 17.08 | 37.0 | 28.8 / 28.9 |
-| kodim13 | 14.09 | 8.46 | 8.83 | 8.94 | 51.7 | 52.5 / 52.0 |
-| kodim14 | 14.72 | 12.89 | 13.17 | 13.22 | 48.1 | 44.6 / 44.7 |
-| kodim15 | 9.85 | 15.51 | 16.21 | 16.16 | 33.9 | 27.4 / 27.5 |
-| kodim16 | 15.63 | 17.42 | 17.40 | 17.54 | 43.9 | 39.3 / 39.1 |
-| kodim17 | 14.47 | 15.08 | 15.32 | 15.51 | 39.8 | 31.7 / 31.8 |
-| kodim18 | 16.70 | 11.53 | 12.14 | 12.38 | 46.2 | 41.4 / 41.1 |
-| kodim19 | 14.90 | 13.45 | 13.60 | 13.53 | 36.6 | 29.9 / 29.9 |
-| kodim20 | 9.38 | 13.78 | 13.79 | 14.25 | 27.4 | 23.2 / 23.2 |
-| kodim21 | 15.86 | 13.43 | 13.90 | 13.93 | 37.0 | 33.1 / 32.9 |
-| kodim22 | 16.09 | 16.07 | 16.01 | 15.92 | 45.8 | 39.3 / 39.2 |
-| kodim23 | 14.84 | 18.69 | 18.64 | 18.88 | 30.6 | 21.2 / 21.4 |
-| kodim24 | 13.74 | 10.69 | 11.01 | 10.92 | 42.2 | 39.5 / 39.5 |
+| kodim01 | 16.52 | 10.50 | 11.48 | 11.48 | 66.4 | 58.5 / 58.5 |
+| kodim02 | 22.24 | 16.72 | 17.28 | 17.27 | 67.4 | 51.3 / 51.2 |
+| kodim03 | 16.31 | 17.54 | 18.31 | 18.34 | 54.1 | 42.2 / 42.1 |
+| kodim04 | 16.67 | 16.88 | 17.52 | 17.57 | 65.3 | 51.3 / 51.1 |
+| kodim05 | 14.67 | 8.99 | 9.85 | 9.83 | 68.1 | 57.4 / 57.3 |
+| kodim06 | 12.70 | 12.51 | 13.09 | 13.10 | 63.4 | 52.2 / 52.2 |
+| kodim07 | 16.89 | 14.32 | 15.64 | 15.63 | 52.1 | 41.5 / 41.5 |
+| kodim08 | 12.44 | 8.04 | 9.00 | 8.98 | 59.4 | 52.4 / 52.4 |
+| kodim09 | 16.68 | 16.22 | 16.53 | 16.58 | 47.8 | 37.4 / 37.5 |
+| kodim10 | 16.43 | 15.99 | 16.82 | 16.86 | 56.5 | 42.8 / 42.8 |
+| kodim11 | 15.92 | 13.03 | 13.72 | 13.69 | 61.8 | 50.0 / 50.0 |
+| kodim12 | 15.04 | 16.47 | 17.84 | 17.78 | 56.0 | 44.4 / 44.4 |
+| kodim13 | 14.09 | 8.75 | 8.93 | 8.92 | 73.8 | 65.1 / 65.0 |
+| kodim14 | 14.72 | 11.92 | 12.87 | 12.87 | 71.2 | 59.5 / 59.4 |
+| kodim15 | 9.85 | 13.87 | 15.69 | 15.70 | 52.4 | 41.2 / 41.1 |
+| kodim16 | 15.63 | 16.50 | 17.09 | 17.11 | 64.6 | 53.3 / 53.2 |
+| kodim17 | 14.47 | 15.26 | 16.10 | 16.12 | 61.9 | 47.8 / 47.8 |
+| kodim18 | 16.70 | 11.39 | 12.25 | 12.29 | 68.7 | 56.3 / 56.2 |
+| kodim19 | 14.90 | 12.80 | 13.33 | 13.34 | 54.6 | 44.1 / 44.0 |
+| kodim20 | 9.38 | 13.48 | 14.15 | 14.10 | 42.4 | 33.4 / 33.4 |
+| kodim21 | 15.86 | 12.67 | 13.46 | 13.41 | 54.5 | 45.3 / 45.3 |
+| kodim22 | 16.09 | 14.15 | 15.01 | 15.03 | 69.0 | 55.3 / 55.2 |
+| kodim23 | 14.84 | 17.84 | 18.33 | 18.36 | 48.1 | 36.3 / 36.3 |
+| kodim24 | 13.74 | 10.34 | 10.80 | 10.79 | 62.0 | 51.9 / 51.8 |
 
 ## Files and reproduction
 
